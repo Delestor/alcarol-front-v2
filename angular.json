@@ -123,6 +123,10 @@
           }
         }
       }
-    }},
-  "defaultProject": "alcarol-front"
+    }
+  },
+  "defaultProject": "alcarol-front",
+  "cli": {
+    "analytics": "c1451fdd-0357-4430-b28b-3e081503e0fa"
+  }
 }
