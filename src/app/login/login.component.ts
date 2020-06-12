@@ -2,6 +2,7 @@ import { Component } from '@angular/core';
 import { users } from '../users';
 import { FormBuilder } from '@angular/forms';
 import { Router } from '@angular/router';
+import { ConditionalExpr } from '@angular/compiler';
 
 
 
@@ -34,7 +35,7 @@ export class LoginComponent {
       -1, -1, 0,  //Vertex 3 position
     ];
 
-    const colorData = [
+    var colorData = [
       //R, G, B
       1, 0, 0,    //Vertex 1 color
       0, 1, 0,    //Vertex 2 color
@@ -47,17 +48,25 @@ export class LoginComponent {
     this.gl.bufferData(this.gl.ARRAY_BUFFER, new Float32Array(vertexData), this.gl.STATIC_DRAW);
 
     //init color Buffer
-    const colorBuffer = this.gl.createBuffer();
-    this.gl.bindBuffer(this.gl.ARRAY_BUFFER, colorBuffer);
-    this.gl.bufferData(this.gl.ARRAY_BUFFER, new Float32Array(colorData), this.gl.STATIC_DRAW);
+    var colorBuffer = this.gl.createBuffer();
+    function setColorData(colorData, gl) {
+      colorBuffer = gl.createBuffer();
+      gl.bindBuffer(gl.ARRAY_BUFFER, colorBuffer);
+      gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(colorData), gl.STATIC_DRAW);
+    }
+
+    setColorData(colorData, this.gl);
 
     const vertexShader = this.gl.createShader(this.gl.VERTEX_SHADER);
     this.gl.shaderSource(vertexShader, `
 precision mediump float;
 
 attribute vec3 position;
+attribute vec3 color;
+varying vec3 vColor;
 
 void main() {
+    vColor = color;
     gl_Position = vec4(position, 1);
 }
 `);
@@ -67,8 +76,10 @@ void main() {
     this.gl.shaderSource(fragmentShader, `
 precision mediump float;
 
+varying vec3 vColor;
+
 void main(){
-    gl_FragColor = vec4(1, 0, 0, 1);
+    gl_FragColor = vec4(vColor, 1);
 }
 `);
     this.gl.compileShader(fragmentShader);
@@ -86,13 +97,38 @@ void main(){
     this.gl.vertexAttribPointer(positionLocation, 3, this.gl.FLOAT, false, 0, 0);
 
     const colorLocation = this.gl.getAttribLocation(program, `color`);
-    this.gl.enableVertexAttribArray(colorLocation);
-    this.gl.bindBuffer(this.gl.ARRAY_BUFFER, colorBuffer);
-    this.gl.vertexAttribPointer(colorLocation, 3, this.gl.FLOAT, false, 0, 0);
 
-    this.gl.useProgram(program);
+    function changeColorTo(colorArray, gl) {
 
-    this.gl.drawArrays(this.gl.TRIANGLES, 0, 3);
+      setColorData(colorArray, gl);
+
+      gl.enableVertexAttribArray(colorLocation);
+      gl.bindBuffer(gl.ARRAY_BUFFER, colorBuffer);
+      gl.vertexAttribPointer(colorLocation, 3, gl.FLOAT, false, 0, 0);
+
+      gl.useProgram(program);
+
+      gl.drawArrays(gl.TRIANGLES, 0, 3);
+    }
+
+    changeColorTo(colorData, this.gl);
+
+    window.addEventListener("keypress", keyPressEvent);
+
+    function keyPressEvent(event) {
+      colorData =
+        [Math.random(), Math.random(), Math.random(),
+        Math.random(), Math.random(), Math.random(),
+        Math.random(), Math.random(), Math.random(),];
+      console.log('apretado!');
+      var canvas = document.querySelector('canvas');
+      var gl = canvas.getContext('webgl');
+      changeColorTo(colorData, gl);
+    }
+
+    function generateRandomColorArray(): any {
+      return [Math.random(), Math.random(), Math.random()];
+    }
 
   }
 
